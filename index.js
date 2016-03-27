@@ -1,5 +1,5 @@
-var CANVAS_HEIGHT = 800;
-var CANVAS_WIDTH = 800;
+var CANVAS_HEIGHT = window.innerHeight;
+var CANVAS_WIDTH = window.innerWidth;
 
 var COLUMN = [
     -1,  1,  1, // A
@@ -19,7 +19,7 @@ var COLUMN_FACES = [
     5, 1, 7, 3,
 ];
 
-var WALL_HEIGHT = 3;
+var WALL_HEIGHT = 5;
 var WALL_WIDTH = 2;
 
 function createWall (mazeX, mazeY) {
@@ -73,6 +73,10 @@ function createProgram(gl, vertFile, fragFile) {
     gl.attachShader(prog, vertShader);
     gl.attachShader(prog, fragShader);
     gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        console.error(gl.getProgramInfoLog(prog));
+        return null;
+    }
 
     prog.positionLocation = gl.getAttribLocation(prog, "a_position");
     prog.timeLocation = gl.getUniformLocation(prog, "u_time");
@@ -95,104 +99,105 @@ function setupModel (gl) {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indxs, gl.STATIC_DRAW);
 }
 
-var cameraPos = vec3.fromValues(0, 0, 0);
-var lookPos = vec3.fromValues(0, 0, 1);
-var currentAngle = Math.PI / 2; // 90 degrees
-var dAngle = 5 * (Math.PI / 180); // 1 degree
-var lookDir = vec3.fromValues(0, 0, 1); // looking north
-
-function onKeyDown(event) {
-    var keyCode = event.keyCode;
-
-    // first handle changes to the currentAngle
-    switch (keyCode) {
-    case 68: //d
-        currentAngle += dAngle;
-        break;
-    case 65: //a
-        currentAngle -= dAngle;
-        break;
-    }
-
-    // update the direction we're looking based on currentAngle
-    var lookX = Math.cos(currentAngle);
-    var lookY = Math.sin(currentAngle);
-    vec3.set(lookDir, lookX, 0, lookY);
-
-    // move forward or backward based on the current lookDir. if strafing,
-    // move in the direction of lookDir rotated 90 degrees left/right
-    switch (keyCode) {
-    case 87: //w
-        vec3.add(cameraPos, cameraPos, lookDir);
-        break;
-    case 83: //s
-        var invLookDir = vec3.create();
-        vec3.negate(invLookDir, lookDir);
-        vec3.add(cameraPos, cameraPos, invLookDir);
-        break;
-    case 81: //q
-        var rotLeftLookDir = vec3.fromValues(lookDir[2], 0, -lookDir[0]);
-        vec3.add(cameraPos, cameraPos, rotLeftLookDir);
-        break;
-    case 69: //e
-        var rotRightLookDir = vec3.fromValues(-lookDir[2], 0, lookDir[0]);
-        vec3.add(cameraPos, cameraPos, rotRightLookDir);
-        break;
-    }
-
-    // set the camera position to 1 unit ahead of where we're looking
-    vec3.add(lookPos, cameraPos, lookDir);
-}
-window.addEventListener('keydown', onKeyDown, false);
-
-function createWalls () {
-    // camera starts at top left cell
-    var maze_data = [
-        '00100',
-        '10101',
-        '10101',
-        '10001',
-        '11111',
-    ]
+function createWalls (userStart, mazeData) {
     var walls = [];
-    for (var row in maze_data) {
-        for (var letterIdx in maze_data[row]) {
-            var letter = maze_data[row][letterIdx];
+    for (var y in mazeData) {
+        for (var x in mazeData[y]) {
+            var letter = mazeData[y][x];
+            var normalizedX = x - userStart.x;
+            var normalizedY = y - userStart.y;
             if (letter == '1')
-                walls.push(createWall(row, letterIdx));
+                walls.push(createWall(normalizedX, normalizedY));
         }
     }
     return walls;
 }
 
 var time = 0;
-function update (gl, prog, walls) {
+function update (gl, prog, walls, camera) {
     time++;
 
     var view = mat4.create();
-    mat4.lookAt(view, cameraPos, lookPos, [0, 1, 0]); // y axis is up
+    mat4.lookAt(view, camera.pos, camera.look, [0, 1, 0]); // y axis is up
 
     var projection = mat4.create();
     mat4.perspective(projection, Math.PI/4, 4/3, 0.1, 100); // random defaults
 
     gl.clearColor(1, 1, 1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.useProgram(prog);
 
     gl.uniform1i(prog.timeLocation, time);
-
     gl.vertexAttribPointer(prog.positionLocation, 3, gl.BYTE, false, 0, 0);
     gl.enableVertexAttribArray(prog.positionLocation);
 
     walls.forEach(function (w) {
-        gl.uniformMatrix4fv(prog.modelLocation, false, w.model);
-        gl.uniformMatrix4fv(prog.viewLocation, false, view);
-        gl.uniformMatrix4fv(prog.projLocation, false, projection);
-        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0);
-        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 4);
-        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 8);
-        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 12);
+        renderWall(gl, prog, w.model, view, projection);
     });
+}
+
+function renderWall (gl, prog, model, view, projection) {
+    gl.uniformMatrix4fv(prog.modelLocation, false, model);
+    gl.uniformMatrix4fv(prog.viewLocation, false, view);
+    gl.uniformMatrix4fv(prog.projLocation, false, projection);
+    gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0);
+    gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 4);
+    gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 8);
+    gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 12);
+}
+
+function setupCamera () {
+    var currentAngle = Math.PI / 2; // 90 degrees
+    var dtheta = 5 * (Math.PI / 180); // 1 degree
+
+    var camera = {
+        pos: vec3.fromValues(0, 0, 0), // position of the camera
+        look: vec3.fromValues(0, 0, 1), // position its looking at
+    };
+
+    window.addEventListener('keydown', function (event) {
+        var keyCode = event.keyCode;
+
+        // first handle changes to the currentAngle
+        switch (keyCode) {
+        case 68: //d
+            currentAngle += dtheta;
+            break;
+        case 65: //a
+            currentAngle -= dtheta;
+            break;
+        }
+
+        // update the direction we're looking based on currentAngle
+        var lookX = Math.cos(currentAngle);
+        var lookY = Math.sin(currentAngle);
+        var lookDir = vec3.fromValues(lookX, 0, lookY);
+
+        // move forward or backward based on the current lookDir. if strafing,
+        // move in the direction of lookDir rotated 90 degrees left/right
+        switch (keyCode) {
+        case 87: //w
+            vec3.add(camera.pos, camera.pos, lookDir);
+            break;
+        case 83: //s
+            var invLookDir = vec3.create();
+            vec3.negate(invLookDir, lookDir);
+            vec3.add(camera.pos, camera.pos, invLookDir);
+            break;
+        case 81: //q
+            var rotLeftLookDir = vec3.fromValues(lookDir[2], 0, -lookDir[0]);
+            vec3.add(camera.pos, camera.pos, rotLeftLookDir);
+            break;
+        case 69: //e
+            var rotRightLookDir = vec3.fromValues(-lookDir[2], 0, lookDir[0]);
+            vec3.add(camera.pos, camera.pos, rotRightLookDir);
+            break;
+        }
+
+        // set the camera position to 1 unit ahead of where we're looking
+        vec3.add(camera.look, camera.pos, lookDir);
+    }, false);
+
+    return camera;
 }
 
 window.onload = function () {
@@ -202,16 +207,41 @@ window.onload = function () {
     document.body.appendChild(canvas);
 
     var gl = canvas.getContext('webgl');
+    window.gl = gl;
     gl.viewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
+    var prog = createProgram(gl, 'vertex.glsl', 'fragment.glsl');
+    if (!prog)
+        return;
+    gl.useProgram(prog);
+
     setupModel(gl);
-    prog = createProgram(gl, 'vertex.glsl', 'fragment.glsl');
-    walls = createWalls();
+    var camera = setupCamera();
+    var initialPosition = {
+        x: 3,
+        y: 0,
+    };
+    var mazeData = [
+        '   v   ',
+        '       ',
+        '       ',
+        '  1 1  ',
+        '11   11',
+        '1     1',
+        '11111 1',
+        '1   1 1',
+        '1 1   1',
+        '1 11111',
+        '1      ',
+        '1111111',
+        '       ',
+    ]
+    var walls = createWalls(initialPosition, mazeData);
 
     function mainloop() {
-        update(gl, prog, walls);
+        update(gl, prog, walls, camera);
         window.requestAnimationFrame(mainloop);
     }
 
