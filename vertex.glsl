@@ -1,11 +1,11 @@
 attribute vec3 a_position;
+uniform mat4 u_model;
+uniform mat4 u_view;
+uniform mat4 u_proj;
+
+varying vec3 a;
 
 void main() {
-    vec3 pos = a_position;
-
-    pos.x = pos.x/pos.z;
-    pos.y = pos.y/pos.z;
-    pos.z = 1.0;
-
-    gl_Position = vec4(pos, 1.0);
+    a = a_position;
+    gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
 }
