@@ -88,7 +88,7 @@ function createProgram(gl, vertFile, fragFile) {
 }
 
 function setupModel (gl) {
-    var verts = Uint8Array.from(COLUMN);
+    var verts = Float32Array.from(COLUMN);
     var buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
@@ -127,7 +127,7 @@ function update (gl, prog, walls, camera) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     gl.uniform1i(prog.timeLocation, time);
-    gl.vertexAttribPointer(prog.positionLocation, 3, gl.BYTE, false, 0, 0);
+    gl.vertexAttribPointer(prog.positionLocation, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(prog.positionLocation);
 
     walls.forEach(function (w) {
