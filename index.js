@@ -1,5 +1,5 @@
-var CANVAS_HEIGHT = window.innerHeight;
-var CANVAS_WIDTH = window.innerWidth;
+var CANVAS_HEIGHT = 800;
+var CANVAS_WIDTH = 800;
 
 var COLUMN = [
     -1,  1,  1, // A
@@ -121,7 +121,7 @@ function update (gl, prog, walls, camera) {
     mat4.lookAt(view, camera.pos, camera.look, [0, 1, 0]); // y axis is up
 
     var projection = mat4.create();
-    mat4.perspective(projection, Math.PI/4, 4/3, 0.1, 100); // random defaults
+    mat4.perspective(projection, 90 * Math.PI/180, 4/3, 0.1, 100); // random defaults
 
     gl.clearColor(1, 1, 1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -202,6 +202,7 @@ function setupCamera () {
 
 window.onload = function () {
     var canvas = document.createElement('canvas');
+    canvas.style = 'float: left;'
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
     document.body.appendChild(canvas);
@@ -220,30 +221,24 @@ window.onload = function () {
     setupModel(gl);
     var camera = setupCamera();
     var initialPosition = {
-        x: 3,
-        y: 0,
+        x: 1,
+        y: 1,
     };
-    var mazeData = [
-        '   v   ',
-        '       ',
-        '       ',
-        '  1 1  ',
-        '11   11',
-        '1     1',
-        '11111 1',
-        '1   1 1',
-        '1 1   1',
-        '1 11111',
-        '1      ',
-        '1111111',
-        '       ',
-    ]
-    var walls = createWalls(initialPosition, mazeData);
+
+    maze = createMaze(8, 8)
+    var walls = createWalls(initialPosition, maze);
 
     function mainloop() {
         update(gl, prog, walls, camera);
         window.requestAnimationFrame(mainloop);
     }
+
+    mazeString = maze.join('\n');
+    var pre = document.createElement('pre');
+    pre.innerHTML = 'WASD controls, Q/E strafe, starts at the top left of maze looking SOUTH\n\n';
+    pre.innerHTML += mazeString;
+    pre.style = 'float: left;'
+    document.body.appendChild(pre);
 
     mainloop();
 };

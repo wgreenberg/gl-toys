@@ -18,13 +18,10 @@ function createMaze (width, height) {
         A = A.concat(path.adjacencies);
     }
 
-    return {
-        M: M,
-        A: A,
-    };
+    return stringify(width, height, A);
 }
 
-function printMaze (width, height, M, A) {
+function stringify (width, height, A) {
     var output = [];
     for (var x=0; x<2*width+1; x++) {
         var row = [];
@@ -54,7 +51,7 @@ function printMaze (width, height, M, A) {
         output[realWall[0]][realWall[1]] = ' ';
         
     });
-    console.log(output.map(function (r) { return r.join('') }).join('\n'));
+    return output.map(function (r) { return r.join(''); });
 }
 
 // Choose random element from S and splice it out
@@ -148,6 +145,3 @@ function isAdj (a, b) {
     var sameCol = a[1] === b[1];
     return (sameRow ^ sameCol) && Math.abs(a[0] - b[0]) <= 1 && Math.abs(a[1] - b[1]) <= 1;
 }
-
-maze = createMaze(8, 8)
-printMaze(8, 8, maze.M, maze.A);
