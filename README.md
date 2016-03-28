@@ -1,1 +1,1 @@
-[!!!](http://wgreenberg.github.io/amaze.js/index.html)
+[a maze, in js](http://wgreenberg.github.io/amaze.js/index.html)
