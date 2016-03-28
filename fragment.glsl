@@ -7,9 +7,9 @@ float PI = 3.14;
 
 // pretty colors
 vec3 rainbow (int t) {
-    t *= 10; // up dat frequency
+    t /= 2; // up dat frequency
     float r = sin(float(t) * (PI/180.0));
-    float g = sin(float(t) * (PI/180.0) + 1.0);
+    float g = cos(float(t) * (PI/180.0) + 1.0);
     float b = sin(float(t) * (PI/180.0) + 2.0);
     return vec3(r,g,b);
 }
