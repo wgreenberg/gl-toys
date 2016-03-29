@@ -9,5 +9,8 @@ varying vec3 a;
 
 void main() {
     a = a_position;
-    gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
+    mat4 wtf = mat4(1.0);
+    wtf[3][1] = sin(float(u_time) / 60.0 + u_model[3][2]/10.0) / 1.5;
+    wtf[3][1] += sin(float(u_time) / 60.0 + u_model[3][0]/10.0) / 1.5;
+    gl_Position = u_proj * u_view * u_model * wtf * vec4(a_position, 1.0);
 }
