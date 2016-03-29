@@ -49,8 +49,13 @@ function stringify (width, height, A) {
             realWall[1] = realA[1];
         }
         output[realWall[0]][realWall[1]] = ' ';
-        
     });
+
+    // create an opening at the entrance (top left) and exit (bottom right)
+    output[1][0] = ' ';
+    output[0][0] = ' ';
+    output[0][1] = ' ';
+    output[2 * height - 1][2 * width] = ' ';
     return output.map(function (r) { return r.join(''); });
 }
 
