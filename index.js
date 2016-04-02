@@ -7,6 +7,8 @@ var MARGIN = 0.05;
 var GRID_HEIGHT = 32;
 var GRID_WIDTH = 32;
 
+var FRAMERATE = 60;
+
 // x, y, z, u, v
 var PANEL = [
    -1,  1, 1, 0, 0, //A
@@ -33,6 +35,7 @@ var PANEL_FACES = [
     0, 2, 4, //ACE
 ];
 
+var oldDeflection = {};
 function getPanels (imageIntensity) {
     var panels = [];
     for (var x=0; x<GRID_HEIGHT; x++) {
@@ -46,8 +49,18 @@ function getPanels (imageIntensity) {
             mat4.translate(model, model, position);
 
             var intensityPct = (255 - imageIntensity[x][GRID_HEIGHT - y]) / 255;
-            var deflection = (intensityPct * 50) * (Math.PI / 180)
-            mat4.rotateX(model, model, deflection);
+            var deflection = (intensityPct * 70 - 35) * (Math.PI / 180);
+
+            // poor man's lerp to limit the rotation rate of the panels
+            var k = x + ',' + y;
+            if (oldDeflection[k] !== undefined && !isNaN(oldDeflection[k])) {
+                var lerp = oldDeflection[k] + 0.2 * (deflection - oldDeflection[k]);
+                oldDeflection[k] = lerp;
+                mat4.rotateX(model, model, lerp);
+            } else {
+                oldDeflection[k] = deflection;
+                mat4.rotateX(model, model, deflection);
+            }
 
             var scale = vec3.fromValues(PANEL_SIZE, PANEL_SIZE, 0.1);
             mat4.scale(model, model, scale);
@@ -68,7 +81,7 @@ function update (gl, prog, camera) {
     mat4.lookAt(view, camera.pos, camera.look, [0, 1, 0]); // y axis is up
 
     var projection = mat4.create();
-    mat4.perspective(projection, 60 * Math.PI/180, 4/3, 0.1, 300); // random defaults
+    mat4.perspective(projection, 60 * Math.PI/180, 1, 0.1, 300); // random defaults
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
     gl.vertexAttribPointer(prog.positionLocation, 3, gl.BYTE, false, 5, 0);
@@ -77,10 +90,11 @@ function update (gl, prog, camera) {
     gl.bindBuffer(gl.ARRAY_BUFFER, normBuffer);
     gl.vertexAttribPointer(prog.normLocation, 3, gl.BYTE, false, 0, 0);
 
-    var revLightDir = vec3.fromValues(0, 0.5, 1);
+    var revLightDir = vec3.fromValues(0, 1.0, 1);
 
     gl.uniformMatrix4fv(prog.viewLocation, false, view);
     gl.uniformMatrix4fv(prog.projLocation, false, projection);
+    gl.uniform1i(prog.timeLocation, time);
     gl.uniform3fv(prog.reverseLightDirLocation, revLightDir);
 
     getPanels(IMAGE).forEach(function (panel) {
@@ -131,10 +145,6 @@ function getImageIntensity () {
     return img;
 }
 
-function videoErr (err) {
-    console.log(err);
-}
-
 var IMAGE;
 window.onload = function () {
     var canvas = document.getElementById('webgl');
@@ -177,7 +187,7 @@ window.onload = function () {
 
     setInterval(function () {
         IMAGE = getImageIntensity();
-    }, 10);
+    }, (1/FRAMERATE) * 1000);
     function mainloop() {
         update(gl, prog, camera);
         window.requestAnimationFrame(mainloop);
