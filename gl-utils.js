@@ -1,3 +1,5 @@
+// mostly cribbed from the unimpeachable https://github.com/magcius
+
 function fetchFile(path) {
     var request = new XMLHttpRequest();
     request.open('GET', path, false);
