@@ -17,6 +17,12 @@ function getDownsampledCoords (i, dsWidth, blitWidth) {
     };
 }
 
+// fit the values to an quadratic curve to help differentiate high brightness
+// pixels
+function scale (x) {
+    return (x * x)/255;
+}
+
 // random grayscale conversion from https://software.intel.com/en-us/html5/hub/blogs/using-the-getusermedia-api-with-the-html5-video-and-canvas-elements
 function getIntensity (r, g, b) {
     return 0.299 * r + 0.587 * g + 0.114 * b;
@@ -59,12 +65,13 @@ function setupWebcamSampler (blitWidth) {
                 dsCnt[coords.x][coords.y]++;
             }
 
+            // computer avg intensity, normalize to [0, 255], scale to curve
             var maxIntensity = getIntensity(255, 255, 255);
-            // computer avg intensity, scale to [0, 255]
             for (var i=0; i<dsWidth; i++) {
                 for (var j=0; j<dsHeight; j++) {
                     dsArr[i][j] /= dsCnt[i][j];
                     dsArr[i][j] = (dsArr[i][j] / maxIntensity) * 255;
+                    dsArr[i][j] = scale(dsArr[i][j]);
                 }
             }
 

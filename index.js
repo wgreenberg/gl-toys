@@ -1,8 +1,8 @@
 var CANVAS_HEIGHT = 800;
 var CANVAS_WIDTH = 800;
 
-var GRID_HEIGHT = 64;
-var GRID_WIDTH = 64;
+var GRID_HEIGHT = 32;
+var GRID_WIDTH = 32;
 
 // x, y, z, u, v
 var PANEL = [
@@ -38,13 +38,13 @@ function getPanels (imageIntensity) {
 
             var worldX = (x - GRID_WIDTH/2) * 2.5;
             var worldY = (y - GRID_HEIGHT/2) * 2.5;
-            var worldZ = -135;
+            var worldZ = -75;
             var position = vec3.fromValues(worldX, worldY, worldZ);
             mat4.translate(model, model, position);
 
             var intensityPct = (255 - imageIntensity[x][GRID_HEIGHT - y]) / 255;
-            var deflection = (intensityPct * 90) * (Math.PI / 180)
-            mat4.rotateY(model, model, deflection);
+            var deflection = (intensityPct * 60) * (Math.PI / 180)
+            mat4.rotateX(model, model, deflection);
 
             panels.push(model);
         }
@@ -71,7 +71,7 @@ function update (gl, prog, camera) {
     gl.bindBuffer(gl.ARRAY_BUFFER, normBuffer);
     gl.vertexAttribPointer(prog.normLocation, 3, gl.BYTE, false, 0, 0);
 
-    var revLightDir = vec3.fromValues(0, 0, 1);
+    var revLightDir = vec3.fromValues(0, 0.5, 1);
 
     gl.uniformMatrix4fv(prog.viewLocation, false, view);
     gl.uniformMatrix4fv(prog.projLocation, false, projection);
