@@ -38,3 +38,34 @@ function createProgram(gl, vertFile, fragFile) {
 
     return prog;
 }
+
+function loadImage(gl, src) {
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+
+    var texId = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texId);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    var img = document.createElement('img');
+    img.src = src;
+
+    img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var data = Uint8Array.from(imgData.data)
+
+        gl.bindTexture(gl.TEXTURE_2D, texId);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, imgData.width, imgData.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    };
+
+    return texId;
+}
+
