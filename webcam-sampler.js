@@ -77,5 +77,9 @@ function setupWebcamSampler (blitWidth) {
 
             return dsArr;
         }
+
+        video.addEventListener('ended', function () {
+            window.captureImage = null;
+        });
     }, function (e) { console.log('your webcam dont work:', e) });
 }
