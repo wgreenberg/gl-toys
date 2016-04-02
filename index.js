@@ -1,6 +1,9 @@
 var CANVAS_HEIGHT = 800;
 var CANVAS_WIDTH = 800;
 
+var PANEL_SIZE = 0.25;
+var MARGIN = 0.05;
+
 var GRID_HEIGHT = 32;
 var GRID_WIDTH = 32;
 
@@ -36,15 +39,18 @@ function getPanels (imageIntensity) {
         for (var y=0; y<GRID_WIDTH; y++) {
             var model = mat4.create();
 
-            var worldX = (x - GRID_WIDTH/2) * 2.5;
-            var worldY = (y - GRID_HEIGHT/2) * 2.5;
-            var worldZ = -75;
+            var worldX = (x - GRID_WIDTH/2) * 2 * (PANEL_SIZE + MARGIN);
+            var worldY = (y - GRID_HEIGHT/2) * 2 * (PANEL_SIZE + MARGIN) + 1;
+            var worldZ = -20;
             var position = vec3.fromValues(worldX, worldY, worldZ);
             mat4.translate(model, model, position);
 
             var intensityPct = (255 - imageIntensity[x][GRID_HEIGHT - y]) / 255;
-            var deflection = (intensityPct * 60) * (Math.PI / 180)
+            var deflection = (intensityPct * 50) * (Math.PI / 180)
             mat4.rotateX(model, model, deflection);
+
+            var scale = vec3.fromValues(PANEL_SIZE, PANEL_SIZE, 0.1);
+            mat4.scale(model, model, scale);
 
             panels.push(model);
         }
@@ -115,7 +121,11 @@ function getImageIntensity () {
     for (var x=0; x<GRID_WIDTH; x++) {
         img.push([])
         for (var y=0; y<GRID_HEIGHT; y++) {
-            img[x].push(255 * Math.sin(x/5 + y/5 + time/20));
+            // neato ripple effect
+            var rX = x - GRID_WIDTH/2;
+            var rY = y - GRID_HEIGHT/2;
+            var v = Math.sin(Math.sqrt((rX*rX + rY*rY) * 2) - time/20);
+            img[x].push(255 * (v + 1)/2);
         }
     }
     return img;
