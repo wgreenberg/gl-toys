@@ -11,28 +11,66 @@ var FRAMERATE = 60;
 
 // x, y, z, u, v
 var PANEL = [
-   -1,  1, 1, 0, 0, //A
-    1,  1, 1, 0, 1, //B
-   -1, -1, 1, 1, 0, //C
-    1, -1, 1, 1, 1, //D
-    0,  0, 0, 0, 0, //E
+   -1,  1,  1, 0, 0, //A0
+   -1,  1,  1, 0, 0, //A1
+   -1,  1,  1, 0, 0, //A2
+    1,  1,  1, 0, 1, //B3
+    1,  1,  1, 1, 0, //B4
+    1,  1,  1, 1, 0, //B5
+   -1, -1,  1, 1, 0, //C6
+   -1, -1,  1, 1, 0, //C7
+   -1, -1,  1, 1, 0, //C8
+    1, -1,  1, 1, 1, //D9
+    1, -1,  1, 1, 1, //D10
+    1, -1,  1, 1, 1, //D11
+   -1,  1, -1, 0, 0, //E12
+   -1,  1, -1, 0, 0, //E13
+   -1,  1, -1, 0, 1, //E14
+    1,  1, -1, 0, 0, //F15
+    1,  1, -1, 1, 1, //F16
+    1,  1, -1, 0, 0, //F17
+   -1, -1, -1, 0, 0, //G18
+   -1, -1, -1, 0, 0, //G19
+   -1, -1, -1, 0, 0, //G20
+    1, -1, -1, 0, 0, //H21
+    1, -1, -1, 0, 0, //H22
+    1, -1, -1, 0, 0, //H23
 ];
 
 var PANEL_NORMALS = [
-    0,  0,  1,
-    0,  0,  1,
-    0,  0,  1,
-    0,  0,  1,
-    0,  0, -1,
+    0,  0,  1, //A0
+   -1,  0,  0, //A1
+    0,  1,  0, //A2
+    0,  0,  1, //B3
+    1,  0,  0, //B4
+    0,  1,  0, //B5
+    0,  0,  1, //C6
+   -1,  0,  0, //C7
+    0, -1,  0, //C8
+    0,  0,  1, //D9
+    1,  0,  0, //D10
+    0, -1,  0, //D11
+    0,  0, -1, //E12
+   -1,  0,  0, //E13
+    0,  1,  0, //E14
+    0,  0, -1, //F15
+    0,  1,  0, //F16
+    1,  0,  0, //F17
+    0,  0, -1, //G18
+   -1,  0,  0, //G19
+    0, -1,  0, //G20
+    0,  0, -1, //H21
+    1,  0,  0, //H22
+    0, -1,  0, //H23
 ];
 
 var PANEL_FACES = [
-    0, 1, 2, //ABC
-    1, 2, 3, //BCD
-    1, 3, 4, //BDE
-    2, 3, 4, //CDE
-    0, 1, 4, //ABE
-    0, 2, 4, //ACE
+    0, 3, 6, 9, //ABCD FRONT
+    12, 15, 18, 21, //EFGH BACK
+    13, 1, 19, 7, //EAGC LEFT
+    17, 4, 22, 10, //FBHD RIGHT
+    2, 5, 14, 16, //ABEF TOP
+    8, 11, 20, 23, //CDGH BOT
 ];
 
 var oldDeflection = {};
@@ -48,7 +86,10 @@ function getPanels (imageIntensity) {
             var position = vec3.fromValues(worldX, worldY, worldZ);
             mat4.translate(model, model, position);
 
-            var intensityPct = (255 - imageIntensity[x][GRID_HEIGHT - y]) / 255;
+            // flip x and y axis
+            var revX = GRID_WIDTH - x - 1;
+            var revY = GRID_HEIGHT - y - 1;
+            var intensityPct = (255 - imageIntensity[revX][revY]) / 255;
             var deflection = (intensityPct * 70 - 35) * (Math.PI / 180);
 
             // poor man's lerp to limit the rotation rate of the panels
@@ -90,7 +131,7 @@ function update (gl, prog, camera) {
     gl.bindBuffer(gl.ARRAY_BUFFER, normBuffer);
     gl.vertexAttribPointer(prog.normLocation, 3, gl.BYTE, false, 0, 0);
 
-    var revLightDir = vec3.fromValues(0, 1.0, 1);
+    var revLightDir = vec3.fromValues(0, 1, 1);
 
     gl.uniformMatrix4fv(prog.viewLocation, false, view);
     gl.uniformMatrix4fv(prog.projLocation, false, projection);
@@ -99,12 +140,12 @@ function update (gl, prog, camera) {
 
     getPanels(IMAGE).forEach(function (panel) {
         gl.uniformMatrix4fv(prog.modelLocation, false, panel);
-        gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 0);
-        gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 3);
-        gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 6);
-        gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 9);
-        gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 12);
-        gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_BYTE, 15);
+        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0);
+        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 4);
+        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 8);
+        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 12);
+        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 16);
+        gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 20);
     });
 }
 
