@@ -19,22 +19,22 @@ var PANEL = [
     1,  1,  1, 1, 0, //B5
    -1, -1,  1, 1, 0, //C6
    -1, -1,  1, 1, 0, //C7
-   -1, -1,  1, 1, 0, //C8
+   -1, -1,  1, 0, 0, //C8
     1, -1,  1, 1, 1, //D9
     1, -1,  1, 1, 1, //D10
-    1, -1,  1, 1, 1, //D11
+    1, -1,  1, 0, 1, //D11
    -1,  1, -1, 0, 0, //E12
    -1,  1, -1, 0, 0, //E13
    -1,  1, -1, 0, 1, //E14
-    1,  1, -1, 0, 0, //F15
+    1,  1, -1, 0, 1, //F15
     1,  1, -1, 1, 1, //F16
     1,  1, -1, 0, 0, //F17
-   -1, -1, -1, 0, 0, //G18
+   -1, -1, -1, 1, 0, //G18
    -1, -1, -1, 0, 0, //G19
-   -1, -1, -1, 0, 0, //G20
-    1, -1, -1, 0, 0, //H21
+   -1, -1, -1, 1, 0, //G20
+    1, -1, -1, 1, 1, //H21
     1, -1, -1, 0, 0, //H22
-    1, -1, -1, 0, 0, //H23
+    1, -1, -1, 1, 1, //H23
 ];
 
 var PANEL_NORMALS = [
@@ -64,6 +64,33 @@ var PANEL_NORMALS = [
     0, -1,  0, //H23
 ];
 
+var ENV_NORMALS = [
+    0,  0,  1, //A0
+   -1,  0,  0, //A1
+    0,  1,  0, //A2
+    0,  0,  1, //B3
+    1,  0,  0, //B4
+    0,  1,  0, //B5
+    0,  0,  1, //C6
+   -1,  0,  0, //C7
+    0,  1,  0, //C8
+    0,  0,  1, //D9
+    1,  0,  0, //D10
+    0,  1,  0, //D11
+    0,  0,  1, //E12
+   -1,  0,  0, //E13
+    0,  1,  0, //E14
+    0,  0,  1, //F15
+    0,  1,  0, //F16
+    1,  0,  0, //F17
+    0,  0,  1, //G18
+   -1,  0,  0, //G19
+    0,  1,  0, //G20
+    0,  0,  1, //H21
+    1,  0,  0, //H22
+    0,  1,  0, //H23
+];
+
 var PANEL_FACES = [
     0, 3, 6, 9, //ABCD FRONT
     12, 15, 18, 21, //EFGH BACK
@@ -82,7 +109,7 @@ function getPanels (imageIntensity) {
 
             var worldX = (x - GRID_WIDTH/2) * 2 * (PANEL_SIZE + MARGIN);
             var worldY = (y - GRID_HEIGHT/2) * 2 * (PANEL_SIZE + MARGIN) + 1;
-            var worldZ = -20;
+            var worldZ = -34;
             var position = vec3.fromValues(worldX, worldY, worldZ);
             mat4.translate(model, model, position);
 
@@ -116,7 +143,7 @@ var time = 0;
 function update (gl, prog, camera) {
     time++;
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.clearColor(17/255, 17/255, 69/255, 1);
+    gl.clearColor(239/255, 245/255, 235/255, 1);
 
     var view = mat4.create();
     mat4.lookAt(view, camera.pos, camera.look, [0, 1, 0]); // y axis is up
@@ -128,8 +155,10 @@ function update (gl, prog, camera) {
     gl.vertexAttribPointer(prog.positionLocation, 3, gl.BYTE, false, 5, 0);
     gl.vertexAttribPointer(prog.uvLocation, 2, gl.BYTE, false, 5, 3);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, normBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, panelNormBuffer);
     gl.vertexAttribPointer(prog.normLocation, 3, gl.BYTE, false, 0, 0);
+
+    gl.bindTexture(gl.TEXTURE_2D, panelTex);
 
     var revLightDir = vec3.fromValues(0, 1, 1);
 
@@ -147,19 +176,38 @@ function update (gl, prog, camera) {
         gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 16);
         gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 20);
     });
+
+    var carpetModel = mat4.create();
+    var carpetPos = vec3.fromValues(0, 0, -20);
+    var carpetScale = vec3.fromValues(15, 15, 15);
+    mat4.translate(carpetModel, carpetModel, carpetPos);
+    mat4.scale(carpetModel, carpetModel, carpetScale);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, envNormBuffer);
+    gl.vertexAttribPointer(prog.normLocation, 3, gl.BYTE, false, 0, 0);
+    gl.uniformMatrix4fv(prog.modelLocation, false, carpetModel);
+    gl.bindTexture(gl.TEXTURE_2D, wallTex);
+    gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 4);
+    gl.bindTexture(gl.TEXTURE_2D, floorTex);
+    gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 20);
 }
 
-var vertBuffer, normBuffer, elementsBuffer;
+var vertBuffer, panelNormBuffer, envNormBuffer, elementsBuffer;
 function setupModel (gl) {
     vertBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
     var verts = Int8Array.from(PANEL);
     gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
 
-    normBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, normBuffer);
-    var norms = Int8Array.from(PANEL_NORMALS);
-    gl.bufferData(gl.ARRAY_BUFFER, norms, gl.STATIC_DRAW);
+    panelNormBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, panelNormBuffer);
+    var panelNorms = Int8Array.from(PANEL_NORMALS);
+    gl.bufferData(gl.ARRAY_BUFFER, panelNorms, gl.STATIC_DRAW);
+
+    envNormBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, envNormBuffer);
+    var envNorms = Int8Array.from(ENV_NORMALS);
+    gl.bufferData(gl.ARRAY_BUFFER, envNorms, gl.STATIC_DRAW);
 
     elementBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementBuffer);
@@ -186,7 +234,7 @@ function getImageIntensity () {
     return img;
 }
 
-var IMAGE;
+var panelTex, floorTex, wallTex;
 window.onload = function () {
     var canvas = document.getElementById('webgl');
     canvas.width = CANVAS_WIDTH;
@@ -197,8 +245,12 @@ window.onload = function () {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
-    // wood texture from http://opengameart.org/node/10411, licensed under CC-BY-SA 3.0
-    loadImage(gl, 'wood.jpg');
+    // http://opengameart.org/node/10411
+    panelTex = loadImage(gl, 'wood.jpg');
+    // http://opengameart.org/node/8684
+    floorTex = loadImage(gl, 'woodfloor.jpg');
+    // http://opengameart.org/node/10021
+    wallTex = loadImage(gl, 'stuccowall.png');
 
     var prog = createProgram(gl, 'vertex.glsl', 'fragment.glsl');
     if (!prog)
