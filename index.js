@@ -116,7 +116,7 @@ var time = 0;
 function update (gl, prog, camera) {
     time++;
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.clearColor(0.2, 0.2, 0.2, 1);
+    gl.clearColor(17/255, 17/255, 69/255, 1);
 
     var view = mat4.create();
     mat4.lookAt(view, camera.pos, camera.look, [0, 1, 0]); // y axis is up
