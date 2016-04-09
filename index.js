@@ -8,12 +8,12 @@ var FRAMERATE = 60;
 
 function createModel () {
     var model = mat4.create();
-    var position = vec3.fromValues(0, 0, -22);
+    var position = vec3.fromValues(0, 0, -22 + Math.sin(time/30));
     var size = vec3.fromValues(8, 8, 8);
     mat4.translate(model, model, position);
     mat4.scale(model, model, size);
-    mat4.rotateY(model, model, time * Math.PI/180);
-    mat4.rotateX(model, model, time * Math.PI/180 / 2);
+    mat4.rotateY(model, model, time * Math.PI/180 / 8);
+    mat4.rotateX(model, model, time * Math.PI/180 / 16);
     return model;
 }
 
@@ -48,7 +48,8 @@ function update (gl, prog, camera) {
     gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 16);
     gl.drawElements(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 20);
 
-    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, CANVAS_HEIGHT, CANVAS_HEIGHT);
+    if (time%2==0)
+        gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, CANVAS_HEIGHT, CANVAS_HEIGHT);
 }
 
 var vertBuffer, elementsBuffer;
