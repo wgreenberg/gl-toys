@@ -8,12 +8,12 @@ var FRAMERATE = 60;
 
 function createModel () {
     var model = mat4.create();
-    var position = vec3.fromValues(0, 0, -22 + Math.sin(time/30));
+    var position = vec3.fromValues(0, 0, -32 + 2*Math.sin(time/30));
     var size = vec3.fromValues(8, 8, 8);
     mat4.translate(model, model, position);
     mat4.scale(model, model, size);
-    mat4.rotateY(model, model, time * Math.PI/180 / 8);
-    mat4.rotateX(model, model, time * Math.PI/180 / 16);
+    mat4.rotateY(model, model, time * Math.PI/180 / 4);
+    mat4.rotateX(model, model, time * Math.PI/180 / 8);
     return model;
 }
 
@@ -21,7 +21,7 @@ var time = 0;
 function update (gl, prog, camera) {
     time++;
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.clearColor(239/255, 245/255, 235/255, 1);
+    gl.clearColor(0, 0, 0, 1);
 
     var view = mat4.create();
     mat4.lookAt(view, camera.pos, camera.look, [0, 1, 0]); // y axis is up
@@ -30,8 +30,11 @@ function update (gl, prog, camera) {
     mat4.perspective(projection, 60 * Math.PI/180, 1, 0.1, 300); // random defaults
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
-    gl.vertexAttribPointer(prog.positionLocation, 3, gl.BYTE, false, 5, 0);
-    gl.vertexAttribPointer(prog.uvLocation, 2, gl.BYTE, false, 5, 3);
+    var step = Float32Array.BYTES_PER_ELEMENT;
+    var total = 3 + 2;
+    var stride = step * total;
+    gl.vertexAttribPointer(prog.positionLocation, 3, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribPointer(prog.uvLocation, 2, gl.FLOAT, false, stride, 3 * step);
 
     gl.uniformMatrix4fv(prog.viewLocation, false, view);
     gl.uniformMatrix4fv(prog.projLocation, false, projection);
@@ -56,7 +59,7 @@ var vertBuffer, elementsBuffer;
 function setupModel (gl) {
     vertBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
-    var verts = Int8Array.from(CUBE.verts);
+    var verts = Float32Array.from(CUBE.verts);
     gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
 
     elementBuffer = gl.createBuffer();

@@ -34,23 +34,24 @@ void main() {
     bool top_bot = a.y == 1.0 || a.y == -1.0;
     vec3 color;
 
+    float c = 15.0;
     float t = float(u_time) * 2.0;
     if (top_bot) {
         if (z_margin || x_margin) {
-            gl_FragColor = vec4(rainbow(t), 1.0);
+            gl_FragColor = vec4(rainbow(t + c * (a.x + a.z)), 1.0);
         } else {
             gl_FragColor = texture2D(u_tex, v_uv);
         }
     } else {
         if (ns_edge) {
             if (x_margin || y_margin) {
-                gl_FragColor = vec4(rainbow(t), 1.0);
+                gl_FragColor = vec4(rainbow(t + c * (a.y + a.z)), 1.0);
             } else {
                 gl_FragColor = texture2D(u_tex, v_uv);
             }
         } else {
             if (z_margin || y_margin) {
-                gl_FragColor = vec4(rainbow(t), 1.0);
+                gl_FragColor = vec4(rainbow(t + c * (a.z + a.y)), 1.0);
             } else {
                 gl_FragColor = texture2D(u_tex, v_uv);
             }
