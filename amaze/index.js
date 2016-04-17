@@ -122,7 +122,11 @@ window.onload = function () {
     gl.useProgram(prog);
 
     setupModel(gl);
-    var camera = setupCamera(45);
+    var camera = setupCamera({
+        initialAngle: 45,
+        speed: 1,
+        turnRate: 10,
+    });
     var initialPosition = {
         x: -2,
         y: -2,

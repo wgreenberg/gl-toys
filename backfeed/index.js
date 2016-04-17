@@ -114,7 +114,11 @@ window.onload = function () {
     gl.useProgram(prog);
 
     setupModel(gl);
-    var camera = setupCamera(-90);
+    var camera = setupCamera({
+        initialAngle: -90,
+        speed: 1,
+        turnRate: 5,
+    });
     lastTex = createTex();
 
     window.mainloop = function () {

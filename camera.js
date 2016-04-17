@@ -1,7 +1,7 @@
-function setupCamera (initialAngle) {
-    var currentAngle = initialAngle * (Math.PI / 180);
-    var dtheta = 5 * (Math.PI / 180); // degrees per turn
-    var dist = 1; // distance per step
+function setupCamera (opts) {
+    var currentAngle = opts.initialAngle * (Math.PI / 180);
+    var dtheta = opts.turnRate * (Math.PI / 180); // degrees per turn
+    var dist = opts.speed; // distance per step
 
     var camera = {
         pos: vec3.fromValues(0, 0, 0), // position of the camera

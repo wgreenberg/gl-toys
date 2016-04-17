@@ -274,7 +274,11 @@ window.onload = function () {
 
     setupModel(gl);
     setupWebcamSampler(GRID_WIDTH);
-    var camera = setupCamera(-90);
+    var camera = setupCamera({
+        initialAngle: -90,
+        speed: 3,
+        turnRate: 10,
+    });
 
     IMAGE = getImageIntensity();
 
