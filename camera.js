@@ -21,6 +21,8 @@ function setupCamera (opts) {
     }
 
     window.addEventListener('keydown', function (event) {
+        if (opts.disableMovement)
+            return;
         var keyCode = event.keyCode;
 
         // first handle changes to the currentAngle
