@@ -5,3 +5,4 @@ gl-toys
 * [backfeed](http://wgreenberg.github.io/gl-toys/backfeed)
 * [ribbons](http://wgreenberg.github.io/gl-toys/ribbons), inspired by http://www.bitforms.com/rozin/twisted-strips
 * [mandelbrot](http://wgreenberg.github.io/gl-toys/mandelbrot)
+* [boids](http://wgreenberg.github.io/gl-toys/boids)
