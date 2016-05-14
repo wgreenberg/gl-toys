@@ -15,7 +15,7 @@ uniform vec3 u_cameraPos;
 
 float minPointScale = 0.1;
 float maxPointScale = 1.0;
-float maxDistance = u_cameraPos.z + u_boxSize / 2.0;
+float maxDistance = max(u_cameraPos.z, 100.0);
 
 void main () {
     v_uv = a_uv;

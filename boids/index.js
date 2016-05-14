@@ -6,14 +6,16 @@ var time = 0;
 var USE_DEBUG = false;
 var USE_COMPUTE = true;
 
-var boxSize = 100.0;
-var comfortZone = 2.0;
-var alignmentC = 8.0;
-var cohesionC = 0.1;
-var randomC = 0.5;
-var separationC = 1.0;
-var cameraZ = 50.0;
-var maxV = 0.3;
+var params = {
+    boxSize: 100,
+    comfortZone: 2.0,
+    alignmentC: 8.0,
+    cohesionC: 0.1,
+    randomC: 0.5,
+    separationC: 1.0,
+    cameraZ: 50.0,
+    maxV: 0.3,
+};
 
 function update (gl, render, compute, debug) {
     time += 1;
@@ -48,13 +50,13 @@ function update (gl, render, compute, debug) {
         gl.uniform1i(compute.prevVLocation, 1);
 
         gl.uniform1i(compute.timeLocation, time % 1e9);
-        gl.uniform1f(compute.boxSizeLocation, boxSize);
-        gl.uniform1f(compute.maxVLocation, maxV);
-        gl.uniform1f(compute.comfortZoneLocation, comfortZone);
-        gl.uniform1f(compute.alignmentCLocation, alignmentC);
-        gl.uniform1f(compute.cohesionCLocation, cohesionC);
-        gl.uniform1f(compute.separationCLocation, separationC);
-        gl.uniform1f(compute.randomCLocation, randomC);
+        gl.uniform1f(compute.boxSizeLocation, params.boxSize);
+        gl.uniform1f(compute.maxVLocation, params.maxV);
+        gl.uniform1f(compute.comfortZoneLocation, params.comfortZone);
+        gl.uniform1f(compute.alignmentCLocation, params.alignmentC);
+        gl.uniform1f(compute.cohesionCLocation, params.cohesionC);
+        gl.uniform1f(compute.separationCLocation, params.separationC);
+        gl.uniform1f(compute.randomCLocation, params.randomC);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, quad.buffer);
         gl.vertexAttribPointer(compute.positionLocation, 3, gl.FLOAT, false, step * quad.size, 0);
@@ -89,11 +91,12 @@ function update (gl, render, compute, debug) {
         gl.uniform1i(render.currVLocation, 1);
 
         var projection = mat4.create();
-        mat4.perspective(projection, 60 * Math.PI/180, CANVAS_WIDTH/CANVAS_HEIGHT, 0.1, 300); // random defaults
+        var maxDist = params.cameraZ + params.boxSize/2;
+        mat4.perspective(projection, 60 * Math.PI/180, CANVAS_WIDTH/CANVAS_HEIGHT, 0.1, maxDist);
         gl.uniformMatrix4fv(render.projLocation, false, projection);
 
-        gl.uniform1f(render.boxSizeLocation, boxSize);
-        gl.uniform3f(render.cameraPosLocation, 0, 0, cameraZ);
+        gl.uniform1f(render.boxSizeLocation, params.boxSize);
+        gl.uniform3f(render.cameraPosLocation, 0, 0, params.cameraZ);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, particleUVs.buffer);
         gl.vertexAttribPointer(render.uvLocation, 2, gl.FLOAT, false, step * particleUVs.size, 0);
@@ -178,10 +181,10 @@ function createComputeFBO (gl, ext) {
     var width = SQRT_BOIDS;
     var height = SQRT_BOIDS;
 
-    var positionTex = createTex(gl, width, height, boxSize);
+    var positionTex = createTex(gl, width, height, params.boxSize);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, ext.COLOR_ATTACHMENT0_WEBGL, gl.TEXTURE_2D, positionTex, 0);
 
-    var velocityTex = createTex(gl, width, height, maxV);
+    var velocityTex = createTex(gl, width, height, params.maxV);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, ext.COLOR_ATTACHMENT1_WEBGL, gl.TEXTURE_2D, velocityTex, 0);
 
     ext.drawBuffersWEBGL([
@@ -220,6 +223,12 @@ function createComputeProgram () {
     computeProg.maxVLocation = gl.getUniformLocation(computeProg, 'u_maxV');
 
     return computeProg;
+}
+
+function hookupInput (param) {
+    document.getElementById(param).addEventListener('input', function () {
+        params[param] = parseFloat(this.value);
+    });
 }
 
 var fbo1, fbo2;
@@ -273,6 +282,15 @@ window.onload = function () {
     fbo2 = createComputeFBO(gl, ext);
 
     setupModel(gl);
+
+    hookupInput('comfortZone');
+    hookupInput('boxSize');
+    hookupInput('alignmentC');
+    hookupInput('cohesionC');
+    hookupInput('randomC');
+    hookupInput('separationC');
+    hookupInput('cameraZ');
+    hookupInput('maxV');
 
     window.mainloop = function () {
         update(gl, render, compute, debug);
