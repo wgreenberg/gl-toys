@@ -6,7 +6,16 @@ var time = 0;
 var USE_DEBUG = false;
 var USE_COMPUTE = true;
 
-function update (gl, camera, render, compute, debug) {
+var boxSize = 100.0;
+var comfortZone = 2.0;
+var alignmentC = 8.0;
+var cohesionC = 0.1;
+var randomC = 0.5;
+var separationC = 1.0;
+var cameraZ = 50.0;
+var maxV = 0.3;
+
+function update (gl, render, compute, debug) {
     time += 1;
 
     var curr, prev;
@@ -38,16 +47,25 @@ function update (gl, camera, render, compute, debug) {
         gl.bindTexture(gl.TEXTURE_2D, prev.velocityTex);
         gl.uniform1i(compute.prevVLocation, 1);
 
+        gl.uniform1i(compute.timeLocation, time % 1e9);
+        gl.uniform1f(compute.boxSizeLocation, boxSize);
+        gl.uniform1f(compute.maxVLocation, maxV);
+        gl.uniform1f(compute.comfortZoneLocation, comfortZone);
+        gl.uniform1f(compute.alignmentCLocation, alignmentC);
+        gl.uniform1f(compute.cohesionCLocation, cohesionC);
+        gl.uniform1f(compute.separationCLocation, separationC);
+        gl.uniform1f(compute.randomCLocation, randomC);
+
         gl.bindBuffer(gl.ARRAY_BUFFER, quad.buffer);
         gl.vertexAttribPointer(compute.positionLocation, 3, gl.FLOAT, false, step * quad.size, 0);
         gl.drawArrays(gl.TRIANGLES, 0, quad.count);
-
-        // actually draw to screen
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.viewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.clearColor(1, 0, 0, 1);
     }
+
+    // actually draw to screen
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clearColor(0, 1, 1, 1);
 
     if (USE_DEBUG) {
         gl.useProgram(debug);
@@ -66,13 +84,16 @@ function update (gl, camera, render, compute, debug) {
         gl.bindTexture(gl.TEXTURE_2D, curr.positionTex);
         gl.uniform1i(render.currPLocation, 0);
 
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, curr.velocityTex);
+        gl.uniform1i(render.currVLocation, 1);
+
         var projection = mat4.create();
         mat4.perspective(projection, 60 * Math.PI/180, CANVAS_WIDTH/CANVAS_HEIGHT, 0.1, 300); // random defaults
         gl.uniformMatrix4fv(render.projLocation, false, projection);
 
-        var view = mat4.create();
-        mat4.lookAt(view, camera.pos, camera.look, [0, 1, 0]); // y axis is up
-        gl.uniformMatrix4fv(render.viewLocation, false, view);
+        gl.uniform1f(render.boxSizeLocation, boxSize);
+        gl.uniform3f(render.cameraPosLocation, 0, 0, cameraZ);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, particleUVs.buffer);
         gl.vertexAttribPointer(render.uvLocation, 2, gl.FLOAT, false, step * particleUVs.size, 0);
@@ -80,8 +101,8 @@ function update (gl, camera, render, compute, debug) {
     }
 }
 
-// make a grid of boids
-function getBoidVerts () {
+// make a grid of evenly spaced UV coordinates
+function getUVGrid () {
     var arr = [];
     for (var x=0; x<SQRT_BOIDS; x++) {
         for (var y=0; y<SQRT_BOIDS; y++) {
@@ -109,7 +130,7 @@ function setupModel (gl) {
 
     particleUVs.buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, particleUVs.buffer);
-    verts = Float32Array.from(getBoidVerts());
+    verts = Float32Array.from(getUVGrid());
     gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
     particleUVs.size = 2;
     particleUVs.count = verts.length / particleUVs.size;
@@ -157,10 +178,10 @@ function createComputeFBO (gl, ext) {
     var width = SQRT_BOIDS;
     var height = SQRT_BOIDS;
 
-    var positionTex = createTex(gl, width, height, 10);
+    var positionTex = createTex(gl, width, height, boxSize);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, ext.COLOR_ATTACHMENT0_WEBGL, gl.TEXTURE_2D, positionTex, 0);
 
-    var velocityTex = createTex(gl, width, height, 0.005);
+    var velocityTex = createTex(gl, width, height, maxV);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, ext.COLOR_ATTACHMENT1_WEBGL, gl.TEXTURE_2D, velocityTex, 0);
 
     ext.drawBuffersWEBGL([
@@ -190,6 +211,14 @@ function createComputeProgram () {
     computeProg.prevPLocation = gl.getUniformLocation(computeProg, 'u_prevP');
     computeProg.prevVLocation = gl.getUniformLocation(computeProg, 'u_prevV');
     computeProg.resolutionLocation = gl.getUniformLocation(computeProg, 'u_resolution');
+    computeProg.boxSizeLocation = gl.getUniformLocation(computeProg, 'u_boxSize');
+    computeProg.comfortZoneLocation = gl.getUniformLocation(computeProg, 'u_comfortZone');
+    computeProg.alignmentCLocation = gl.getUniformLocation(computeProg, 'u_alignmentC');
+    computeProg.cohesionCLocation = gl.getUniformLocation(computeProg, 'u_cohesionC');
+    computeProg.separationCLocation = gl.getUniformLocation(computeProg, 'u_separationC');
+    computeProg.randomCLocation = gl.getUniformLocation(computeProg, 'u_randomC');
+    computeProg.maxVLocation = gl.getUniformLocation(computeProg, 'u_maxV');
+
     return computeProg;
 }
 
@@ -224,7 +253,10 @@ window.onload = function () {
     gl.enableVertexAttribArray(render.uvLocation);
 
     render.currPLocation = gl.getUniformLocation(render, 'u_currP');
+    render.currVLocation = gl.getUniformLocation(render, 'u_currV');
     render.projLocation = gl.getUniformLocation(render, "u_proj");
+    render.boxSizeLocation = gl.getUniformLocation(render, 'u_boxSize');
+    render.cameraPosLocation = gl.getUniformLocation(render, 'u_cameraPos');
 
     // setup the render pass
     var debug = createProgram(gl, 'debugVertex.glsl', 'debugFragment.glsl');
@@ -242,14 +274,8 @@ window.onload = function () {
 
     setupModel(gl);
 
-    var camera = setupCamera({
-        initialAngle: 90,
-        speed: 1,
-        turnRate: 5,
-    });
-
     window.mainloop = function () {
-        update(gl, camera, render, compute, debug);
+        update(gl, render, compute, debug);
         window.requestAnimationFrame(mainloop);
     };
 
