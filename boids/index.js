@@ -49,7 +49,7 @@ function update (gl, render, compute, debug) {
         gl.bindTexture(gl.TEXTURE_2D, prev.velocityTex);
         gl.uniform1i(compute.prevVLocation, 1);
 
-        gl.uniform1i(compute.timeLocation, time % 1e9);
+        gl.uniform1i(compute.timeLocation, time % 1e3);
         gl.uniform1f(compute.boxSizeLocation, params.boxSize);
         gl.uniform1f(compute.maxVLocation, params.maxV);
         gl.uniform1f(compute.comfortZoneLocation, params.comfortZone);
