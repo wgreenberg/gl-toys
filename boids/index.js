@@ -291,7 +291,16 @@ window.onload = function () {
         hookupInput(param);
     }
 
-    window.mainloop = function () {
+    var fpsLabel = document.getElementById('fps');
+    var lastTimestamp = 1;
+    window.mainloop = function (t) {
+        if (t) {
+            var diff = t - lastTimestamp;
+            lastTimestamp = t;
+            var fps = 1000 / diff;
+            fpsLabel.innerHTML = Math.floor(fps) + ' fps';
+        }
+
         update(gl, render, compute, debug);
         window.requestAnimationFrame(mainloop);
     };
