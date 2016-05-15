@@ -3,10 +3,10 @@ var CANVAS_WIDTH = 1200;
 var NUM_BOIDS = 64 * 64;
 var SQRT_BOIDS = Math.floor(Math.sqrt(NUM_BOIDS));
 var time = 0;
-var USE_DEBUG = false;
-var USE_COMPUTE = true;
 
 var params = {
+    useCompute: true,
+    useDebug: false,
     boxSize: 100,
     comfortZone: 2.0,
     alignmentC: 8.0,
@@ -21,7 +21,7 @@ function update (gl, render, compute, debug) {
     time += 1;
 
     var curr, prev;
-    if (time % 2 === 0) {
+    if (params.useCompute && time % 2 === 0) {
         curr = fbo1;
         prev = fbo2;
     } else {
@@ -31,7 +31,7 @@ function update (gl, render, compute, debug) {
 
     var step = Float32Array.BYTES_PER_ELEMENT;
 
-    if (USE_COMPUTE) {
+    if (params.useCompute) {
         // run compute step, reading from prev FBO and writing to curr FBO
         gl.bindFramebuffer(gl.FRAMEBUFFER, curr.frameBuffer);
         gl.useProgram(compute);
@@ -69,7 +69,7 @@ function update (gl, render, compute, debug) {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.clearColor(0, 1, 1, 1);
 
-    if (USE_DEBUG) {
+    if (params.useDebug) {
         gl.useProgram(debug);
 
         gl.activeTexture(gl.TEXTURE0);
@@ -226,8 +226,12 @@ function createComputeProgram () {
 }
 
 function hookupInput (param) {
-    document.getElementById(param).addEventListener('input', function () {
-        params[param] = parseFloat(this.value);
+    var e = param == 'useCompute' || param == 'useDebug' ? 'click' : 'input';
+    document.getElementById(param).addEventListener(e, function () {
+        if (param == 'useCompute' || param == 'useDebug')
+            params[param] = this.checked;
+        else
+            params[param] = parseFloat(this.value);
     });
 }
 
@@ -283,14 +287,9 @@ window.onload = function () {
 
     setupModel(gl);
 
-    hookupInput('comfortZone');
-    hookupInput('boxSize');
-    hookupInput('alignmentC');
-    hookupInput('cohesionC');
-    hookupInput('randomC');
-    hookupInput('separationC');
-    hookupInput('cameraZ');
-    hookupInput('maxV');
+    for (var param in params) {
+        hookupInput(param);
+    }
 
     window.mainloop = function () {
         update(gl, render, compute, debug);
