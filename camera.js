@@ -4,7 +4,7 @@ function setupCamera (opts) {
     var dist = opts.speed; // distance per step
 
     var camera = {
-        pos: vec3.fromValues(0, 0, 0), // position of the camera
+        pos: opts.initialPos || vec3.fromValues(0, 0, 0), // position of the camera
         look: vec3.fromValues(0, 0, 1), // position its looking at
     };
 
