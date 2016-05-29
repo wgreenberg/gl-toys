@@ -28,13 +28,20 @@ function update (gl, prog, camera) {
     gl.uniformMatrix4fv(prog.projLocation, false, projection);
     gl.uniform1i(prog.timeLocation, time);
 
-    var lightPos = vec3.fromValues(Math.cos(time/30) * 3, 0, Math.sin(time/30) * 3);
+    var lightPos = vec3.fromValues(Math.cos(time/30) * 2, 0, Math.sin(time/30) * 2);
     gl.uniform3fv(prog.lightPosLocation, lightPos);
 
     gl.uniform3fv(prog.cameraPosLocation, camera.pos);
 
     var model = mat4.create();
     gl.uniformMatrix4fv(prog.modelLocation, false, model);
+    gl.drawElements(gl.TRIANGLES, bunny.indxs.length, gl.UNSIGNED_SHORT, 0);
+
+    // draw a tiny illumibunny to show where the light is
+    var illumibunny = mat4.create();
+    mat4.translate(illumibunny, illumibunny, lightPos);
+    mat4.scale(illumibunny, illumibunny, vec3.fromValues(0.1, 0.1, 0.1));
+    gl.uniformMatrix4fv(prog.modelLocation, false, illumibunny);
     gl.drawElements(gl.TRIANGLES, bunny.indxs.length, gl.UNSIGNED_SHORT, 0);
 }
 
@@ -73,7 +80,7 @@ window.onload = function () {
         initialAngle: -90,
         speed: 1,
         turnRate: 5,
-        initialPos: vec3.fromValues(0, 0, 3.0),
+        initialPos: vec3.fromValues(0, 0, 4.0),
     });
 
     window.mainloop = function () {
