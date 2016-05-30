@@ -5,8 +5,8 @@ uniform int u_time;
 varying vec2 v_screenPos;
 
 #define MAX_ITER 100
-#define MAX_DIST 20.0
-#define EPSILON 0.001
+#define MAX_DIST 100.0
+#define EPSILON 0.01
 
 #define FREQ 100.0
 #define SINT sin(float(u_time) / FREQ)
@@ -38,25 +38,42 @@ float cylinder (vec3 pos, vec3 ctr, float radius, float height) {
     return d;
 }
 
-float column (vec3 pos, vec3 ctr, float radius, float height) {
-    float pillar = cylinder(pos, ctr, radius, height);
+float section (vec3 pos, float radius, float height) {
+    float pillar = cylinder(pos, vec3(0.0), radius, height);
     if (pillar >= 0.5) return pillar;
     radius += 0.05;
     float dist = pillar;
-    for (int i=0; i < NUM_DIVOTS; i++) {
-        float rad = TAU * (float(i) / float(NUM_DIVOTS));
-        vec3 cut_ctr = vec3(ctr.x + sin(rad) * radius, ctr.y, ctr.z + cos(rad) * radius);
-        float cut = cylinder(pos, cut_ctr, radius/10.0, height);
-        dist = max(dist, -cut);
-    }
+
+    float dr = TAU / float(NUM_DIVOTS);
+    float rad = atan(pos.x, pos.z);
+    rad = ceil(rad/dr) * dr;
+    vec3 cut_ctr = vec3(sin(rad) * radius, 0.0, cos(rad) * radius);
+    float cut = cylinder(pos, cut_ctr, radius/10.0, height);
+    return max(dist, -cut);
+}
+
+float column (vec3 pos) {
+    float dist = 1.0;
+    float height = 20.0;
+    dist = min(dist, section(pos, 1.0, height - 0.01));
     return dist;
+}
+
+float repeat_col (vec3 pos, vec3 c) {
+    vec3 q = mod(pos, c) - 0.5 * c;
+    return column(q);
+}
+
+float smin( float a, float b, float k ) {
+    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+    return mix( b, a, h ) - k*h*(1.0-h);
 }
 
 float dist_field (vec3 pos) {
     float dist = 1.0;
-    dist = min(dist, column(pos, vec3(0.0, -1.0, 0.0), 1.0, 0.99));
-    dist = min(dist, column(pos, vec3(0.0, 0.0, 0.0), 1.0, 0.99));
-    dist = min(dist, column(pos, vec3(0.0, 1.0, 0.0), 1.0, 0.99));
+    //dist = min(dist, repeat_col(pos, vec3(10.0, 0.0, 10.0)));
+    dist = min(dist, column(pos));
+    dist = smin(dist, plane(pos, 2.5, 0), 0.3);
     return dist;
 }
 
@@ -69,8 +86,9 @@ vec3 norm_field (vec3 pos) {
 }
 
 void main() {
-    vec3 cam_origin = vec3(SINT*4.0, 0.0, COST*4.0);
-    vec3 cam_target = vec3(0.0, 0.0, 0.0);
+    //vec3 cam_origin = vec3(0.0, 0.0, float(u_time) / 5.0);
+    vec3 cam_origin = vec3(0.0, 0.0, -5.0);
+    vec3 cam_target = cam_origin + vec3(0.0, 0.0, 1.0);
     vec3 up_dir = vec3(0.0, 1.0, 0.0);
     vec3 cam_dir = normalize(cam_target - cam_origin);
     vec3 cam_right = normalize(cross(up_dir, cam_origin));
@@ -93,6 +111,6 @@ void main() {
         float diffuse = max(0.0, dot(-ray_dir, pos_norm));
         gl_FragColor = vec4(vec3(diffuse), 1.0);
     } else {
-        gl_FragColor = vec4(vec3(1.0), 1.0);
+        gl_FragColor = vec4(vec3(0.0), 1.0);
     }
 }
