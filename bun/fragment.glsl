@@ -4,10 +4,13 @@ uniform int u_time;
 uniform float u_ambient;
 uniform float u_shininess;
 uniform float u_attenuation;
+uniform vec3 u_lightPos;
+uniform vec3 u_cameraPos;
+uniform vec3 u_color;
+uniform vec3 u_specularColor;
 
 varying vec3 v_interpolatedNormal;
-varying vec3 v_surfaceToCamera;
-varying vec3 v_surfaceToLight;
+varying vec3 v_vertPos;
 
 float PI = 3.14159;
 // pretty colors
@@ -26,30 +29,32 @@ vec3 rainbow (float t) {
 }
 
 vec4 phong () {
+    vec3 lightColor = rainbow(float(u_time) / 2.0);
+
     vec3 normal = normalize(v_interpolatedNormal);
-    vec3 surfaceToLight = normalize(v_surfaceToLight);
-    vec4 rabbitColor = vec4(vec3(0.3), 1.0);
-    vec4 rabbitSpecularColor = vec4(vec3(0.1), 1.0);
-    vec4 lightColor = vec4(rainbow(float(u_time)), 1.0);
+    vec3 surfaceToLight = u_lightPos - v_vertPos;
+    float distToLight = length(surfaceToLight);
+    surfaceToLight = normalize(surfaceToLight);
 
+    float attenuation = 1.0 / (1.0 + u_attenuation * pow(distToLight, 2.0));
     float ambient = u_ambient;
-
     float diffuse = max(0.0, dot(normal, surfaceToLight));
-
     float specular = 0.0;
+
     if (diffuse > 0.0) {
-        vec3 incidence = -normalize(v_surfaceToLight);
-        vec3 reflection = reflect(incidence, normal);
-        float cosAngle = max(0.0, dot(normalize(v_surfaceToCamera), reflection));
-        specular = pow(cosAngle, u_shininess);
+        // Blinn-Phong specular shading
+        vec3 surfaceToCamera = normalize(u_cameraPos - v_vertPos);
+        vec3 halfDir = normalize(surfaceToLight + surfaceToCamera);
+        float specAngle = max(0.0, dot(halfDir, normal));
+        specular = pow(specAngle, u_shininess);
     }
 
-    float distToLight = length(v_surfaceToLight);
-    float attenuation = 1.0 / (1.0 + u_attenuation * pow(distToLight, 2.0));
+    vec3 total = (ambient + attenuation * diffuse) * u_color;
+    total += attenuation * specular * u_specularColor;
+    total *= lightColor;
 
-    vec3 total = (ambient + attenuation * diffuse) * rabbitColor.rgb;
-    total += attenuation * specular * rabbitSpecularColor.rgb;
-    total *= lightColor.rgb;
+    // gamma correction
+    total = pow(total, vec3(1.0/2.2));
 
     return vec4(total, 1.0);
 }
