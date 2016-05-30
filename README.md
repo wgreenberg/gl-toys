@@ -6,3 +6,4 @@ gl-toys
 * [ribbons](http://wgreenberg.github.io/gl-toys/ribbons), inspired by http://www.bitforms.com/rozin/twisted-strips
 * [mandelbrot](http://wgreenberg.github.io/gl-toys/mandelbrot)
 * [boids](http://wgreenberg.github.io/gl-toys/boids)
+* [illumibunny](http://wgreenberg.github.io/gl-toys/illumibunny)
