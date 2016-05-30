@@ -8,7 +8,7 @@ var time = 0;
 function update (gl, prog, camera) {
     time += 1;
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.clearColor(1, 1, 1, 1);
+    gl.clearColor(0, 0, 0, 1);
 
     var view = mat4.create();
     mat4.lookAt(view, camera.pos, camera.look, [0, 1, 0]); // y axis is up
@@ -28,9 +28,10 @@ function update (gl, prog, camera) {
     gl.uniformMatrix4fv(prog.projLocation, false, projection);
     gl.uniform1i(prog.timeLocation, time);
 
-    var lightPos = vec3.fromValues(Math.cos(time/30) * 2, 0, Math.sin(time/30) * 2);
+    var lightPos = vec3.fromValues(Math.cos(time/30) * 2, Math.cos(time/50), Math.sin(time/30) * 2);
     gl.uniform3fv(prog.lightPosLocation, lightPos);
 
+    gl.uniform1f(prog.ambientLocation, 0.15);
     gl.uniform3fv(prog.cameraPosLocation, camera.pos);
 
     var model = mat4.create();
@@ -41,6 +42,7 @@ function update (gl, prog, camera) {
     var illumibunny = mat4.create();
     mat4.translate(illumibunny, illumibunny, lightPos);
     mat4.scale(illumibunny, illumibunny, vec3.fromValues(0.1, 0.1, 0.1));
+    gl.uniform1f(prog.ambientLocation, 3.0);
     gl.uniformMatrix4fv(prog.modelLocation, false, illumibunny);
     gl.drawElements(gl.TRIANGLES, bunny.indxs.length, gl.UNSIGNED_SHORT, 0);
 }
@@ -69,6 +71,7 @@ window.onload = function () {
 
     prog.modelLocation = gl.getUniformLocation(prog, "u_model");
     prog.timeLocation = gl.getUniformLocation(prog, "u_time");
+    prog.ambientLocation = gl.getUniformLocation(prog, "u_ambient");
     prog.viewLocation = gl.getUniformLocation(prog, "u_view");
     prog.projLocation = gl.getUniformLocation(prog, "u_proj");
     prog.cameraPosLocation = gl.getUniformLocation(prog, "u_cameraPos");
