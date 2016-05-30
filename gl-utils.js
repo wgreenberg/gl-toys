@@ -33,6 +33,8 @@ function loadObjFile(gl, path) {
         if (line.length === 0) return;
         var tokens = line.split(' ');
         switch (tokens[0]) {
+        case '#': // ignore comments
+            break;
         case 'v':
             verts.push(parseFloat(tokens[1]));
             verts.push(parseFloat(tokens[2]));
