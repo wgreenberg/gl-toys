@@ -15,8 +15,7 @@ varying vec3 v_surfaceToLight;
 void main() {
     vec4 world_position = u_model * vec4(a_position, 1.0);
     v_interpolatedNormal = mat3(u_model) * a_normal;
-    v_surfaceToCamera = normalize(u_cameraPos - world_position.rgb);
-    v_surfaceToLight = normalize(u_lightPos - world_position.rgb);
+    v_surfaceToCamera = u_cameraPos - world_position.rgb;
+    v_surfaceToLight = u_lightPos - world_position.rgb;
     gl_Position = u_proj * u_view * world_position;
 }
-
