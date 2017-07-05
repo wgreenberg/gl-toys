@@ -7,3 +7,4 @@ gl-toys
 * [mandelbrot](http://wgreenberg.github.io/gl-toys/mandelbrot)
 * [boids](http://wgreenberg.github.io/gl-toys/boids)
 * [illumibunny](http://wgreenberg.github.io/gl-toys/illumibunny)
+* [rollingshutter](http://wgreenberg.github.io/gl-toys/rollingshutter)
