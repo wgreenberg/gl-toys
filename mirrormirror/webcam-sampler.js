@@ -35,7 +35,7 @@ function setupWebcamSampler (blitWidth) {
     blit.height = blitWidth;
     var blitCtx = blit.getContext('2d');
     navigator.getUserMedia({video: true, audio: false}, function (stream) {
-        video.src = window.URL.createObjectURL(stream);
+        video.srcObject = stream;
         video.play();
 
         // capture an image from the webcam, blit to canvas, then downsample
